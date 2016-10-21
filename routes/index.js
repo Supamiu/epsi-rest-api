@@ -23,8 +23,6 @@ var twitter = new twitterAPI({
 
 router.get('/users/:id/friends', function (req, res) {
     var user = res.user;
-    console.log(+req.params['id']);
-    console.log(user.id);
     if (user.id != +req.params['id']) {
         res.status(403).send();
     } else {
@@ -48,6 +46,50 @@ router.get('/users/:id/friends', function (req, res) {
     }
 });
 
+router.get('/users/:id', function (req, res) {
+    var user = res.user;
+    if (user.id != +req.params['id']) {
+        res.status(403).send();
+    } else {
+        connection.connect();
+        connection.query("SELECT * FROM user WHERE id = ?", res.user.id, function (err, rows) {
+            if (err) {
+                throw err;
+            } else {
+                user.oauth = rows[0].oauth;
+                user.oauth_secret = rows[0].oauth_secret;
+                res.send(user);
+            }
+        });
+        connection.end();
+    }
+});
+
+router.put('/users/:id', function (req, res) {
+    var user = res.user;
+    if (user.id != +req.params['id']) {
+        res.status(403).send();
+    } else {
+        var newUser = {
+            login:req.body.login | user.login,
+            password:req.body.password | user.password,
+            oauth:req.body.oauth | user.oauth,
+            oauth_secret:req.bosy.oauth_secret | user.oauth_secret
+        };
+        connection.connect();
+        connection.query("UPDATE user SET ?", newUser, function (err, rows) {
+            if (err) {
+                throw err;
+            } else {
+                user.oauth = rows[0].oauth;
+                user.oauth_secret = rows[0].oauth_secret;
+                res.send(user);
+            }
+        });
+        connection.end();
+    }
+});
+
 router.get('/users/:id/friends/:friend_id/tweets', function (req, res) {
     var user = res.user;
     console.log(+req.params['id']);
@@ -62,9 +104,9 @@ router.get('/users/:id/friends/:friend_id/tweets', function (req, res) {
             } else {
                 twitter.getRequestToken(function (error) {
                     if (error) {
-                       throw error;
+                        throw error;
                     } else {
-                        twitter.getTimeline("user", {user_id:req.params['friend_id']}, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
+                        twitter.getTimeline("user", {user_id: req.params['friend_id']}, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
                             res.send(data);
                         });
                     }
@@ -108,7 +150,7 @@ router.post('/users/:id/saved', function (req, res) {
         connection.query("INSERT INTO saved_tweets SET ?", {
             user_id: res.user.id,
             tweeter_id: req.body.tweeter_id
-        }, function (err, rows) {
+        }, function (err) {
             if (err) {
                 throw err;
             } else {

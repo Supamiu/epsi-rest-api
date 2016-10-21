@@ -21,7 +21,9 @@ function auth(key, callback) {
             callback({
                 id: loginInfos[0],
                 login: loginInfos[1],
-                password: loginInfos[2]
+                password: loginInfos[2],
+                oauth: loginInfos[3],
+                oauth_secret: loginInfos[4]
             });
         }
     });
