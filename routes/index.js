@@ -35,7 +35,7 @@ router.get('/users/:id/friends', function (req, res) {
             } else {
                 twitter.getRequestToken(function (error) {
                     if (error) {
-                        console.log("Error getting OAuth request token : ", error);
+                        throw error;
                     } else {
                         twitter.friends("ids", {}, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
                             res.send(data);
@@ -62,7 +62,7 @@ router.get('/users/:id/friends/:friend_id/tweets', function (req, res) {
             } else {
                 twitter.getRequestToken(function (error) {
                     if (error) {
-                        console.log("Error getting OAuth request token : ", error);
+                       throw error;
                     } else {
                         twitter.getTimeline("user", {user_id:req.params['friend_id']}, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
                             res.send(data);
