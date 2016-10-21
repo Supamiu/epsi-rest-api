@@ -3,7 +3,6 @@ var mysql = require('mysql');
 
 function auth(key, callback) {
     var userInformations = new Buffer(key, 'base64').toString("ascii");
-    console.log(userInformations);
     var loginInfos = userInformations.split(":");
 
     var connection = mysql.createConnection({
