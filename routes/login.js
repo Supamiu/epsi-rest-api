@@ -9,14 +9,14 @@ var connection = mysql.createConnection({
     password: 'password',
     database: 'tweeter_api'
 });
+
+connection.connect();
 /*
  LOGIN
  */
 router.get('/login', function (req, res) {
     var login = req.query.login;
     var password = sha256(req.query.password);
-
-    connection.connect();
     connection.query('SELECT * FROM user WHERE login = ? AND password = ?', [login, password], function (err, rows, fields) {
         if (err || rows.length === 0) {
             res.status(400).send();
@@ -24,7 +24,6 @@ router.get('/login', function (req, res) {
             res.send({key: new Buffer(rows[0].id + ":" + login + ":" + password).toString('base64')});
         }
     });
-    connection.end();
 });
 
 /*
@@ -37,13 +36,10 @@ router.post('/users', function (req, res) {
         var login = req.body.login;
         var password = sha256(req.body.password);
 
-        connection.connect();
-
         connection.query('INSERT INTO user SET ?', {login: login, password: password}, function (err, result) {
             if (err) throw err;
             res.status(201).send({key: new Buffer(res.insertId + ":" + login + ":" + password).toString('base64')});
         });
-        connection.end();
     }
 
 });
