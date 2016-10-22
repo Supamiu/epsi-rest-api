@@ -136,7 +136,8 @@ router.get('/users/:id/friends/:friend_id/tweets/:tweet_id/embed', function (req
                         twitter.users("show", {user_id: req.params['friend_id']}, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
                             var userName = data.screen_name;
                             twitter.statuses("oembed", {
-                                url: 'https://publish.twitter.com/'+userName+'/status/'+req.params['tweet_id']
+                                url: 'https://publish.twitter.com/'+userName+'/status/'+req.params['tweet_id'],
+                                omit_script:true
                             }, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
                                 res.send(data)
                             });
@@ -147,7 +148,6 @@ router.get('/users/:id/friends/:friend_id/tweets/:tweet_id/embed', function (req
         });
     }
 });
-
 
 router.get('/users/:id/friends/:friend_id', function (req, res) {
     var user = res.user;

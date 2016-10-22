@@ -38,7 +38,7 @@ router.post('/users', function (req, res) {
 
         connection.query('INSERT INTO user SET ?', {login: login, password: password}, function (err, result) {
             if (err) throw err;
-            res.status(201).send({key: new Buffer(res.insertId + ":" + login + ":" + password).toString('base64')});
+            res.status(201).send({key: new Buffer(result.insertId + ":" + login + ":" + password).toString('base64')});
         });
     }
 
