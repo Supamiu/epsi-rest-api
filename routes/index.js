@@ -19,7 +19,7 @@ var twitterAPI = require('node-twitter-api');
 var twitter = new twitterAPI({
     consumerKey: 'Bir1fGy9ehDx0XWgU6jnBbb4M',
     consumerSecret: 'm9StQLJSZr2aRNbjJmJMQRgQ6kUhfu57eskWfMdfrvXkKZvx2i',
-    callback: 'http://127.0.0.1/todo'
+    callback: 'http://127.0.0.1:3000/home'
 });
 
 router.get('/users/:id/friends', function (req, res) {
@@ -62,28 +62,70 @@ router.get('/users/:id', function (req, res) {
     }
 });
 
-router.put('/users/:id', function (req, res) {
+router.post('/users/:id/oauth', function (req, res) {
     var user = res.user;
     if (user.id != +req.params['id']) {
         res.status(403).send();
     } else {
-        var newUser = {
-            login: req.body.login | user.login,
-            password: req.body.password | user.password,
-            oauth: req.body.oauth | user.oauth,
-            oauth_secret: req.bosy.oauth_secret | user.oauth_secret
-        };
-        connection.query("UPDATE user SET ?", newUser, function (err, rows) {
+        connection.query('SELECT * FROM oauth_request WHERE user_id = ?', user.id, function (err, rows) {
             if (err) {
                 throw err;
-            } else {
-                user.oauth = rows[0].oauth;
-                user.oauth_secret = rows[0].oauth_secret;
-                res.send(user);
+            }
+            else {
+                if (rows.length === 0) {
+                    res.status(400).send();
+                } else {
+                    console.log(rows[0].request_token, rows[0].request_secret, req.body.oauth_verifier);
+                    twitter.getAccessToken(rows[0].request_token, rows[0].request_secret, req.body.oauth_verifier, function (error, accessToken, accessTokenSecret) {
+                        if (error) {
+                            console.error(error);
+                            throw error;
+                        }
+                        var newUser = {
+                            login: user.login,
+                            password: user.password,
+                            oauth: accessToken,
+                            oauth_secret: accessTokenSecret
+                        };
+                        connection.query("UPDATE user SET ? WHERE id = ?", [newUser, user.id], function (err, rows) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                connection.query("DELETE from oauth_request WHERE user_id = ?", user.id, function (err, result) {
+                                    user.oauth = accessToken;
+                                    user.oauth_secret = accessTokenSecret;
+                                    res.send(user);
+                                });
+                            }
+                        });
+                    });
+                }
             }
         });
     }
 });
+
+router.get('/users/:id/oauth', function (req, res) {
+    var user = res.user;
+    if (user.id != +req.params['id']) {
+        res.status(403).send();
+    } else {
+        twitter.getRequestToken(function (error, requestToken, requestTokenSecret, results) {
+            if (error) {
+                console.log("Error getting OAuth request token : " + error);
+            } else {
+                connection.query("INSERT INTO oauth_request SET ?", {
+                    user_id: user.id,
+                    request_token: requestToken,
+                    request_secret: requestTokenSecret
+                }, function () {
+                    res.send({link: twitter.getAuthUrl(requestToken, {})});
+                });
+            }
+        });
+    }
+});
+
 
 router.get('/users/:id/friends/:friend_id/tweets', function (req, res) {
     var user = res.user;
@@ -136,8 +178,8 @@ router.get('/users/:id/friends/:friend_id/tweets/:tweet_id/embed', function (req
                         twitter.users("show", {user_id: req.params['friend_id']}, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
                             var userName = data.screen_name;
                             twitter.statuses("oembed", {
-                                url: 'https://publish.twitter.com/'+userName+'/status/'+req.params['tweet_id'],
-                                omit_script:true
+                                url: 'https://publish.twitter.com/' + userName + '/status/' + req.params['tweet_id'],
+                                omit_script: true
                             }, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
                                 res.send(data)
                             });
@@ -149,7 +191,7 @@ router.get('/users/:id/friends/:friend_id/tweets/:tweet_id/embed', function (req
     }
 });
 
-router.get('/users/:id/friends/:friend_id', function (req, res) {
+router.get('/users/:id/friends/lookup', function (req, res) {
     var user = res.user;
     if (user.id != +req.params['id']) {
         res.status(403).send();
@@ -162,9 +204,21 @@ router.get('/users/:id/friends/:friend_id', function (req, res) {
                     if (error) {
                         throw error;
                     } else {
-                        twitter.users("show", {user_id: req.params['friend_id']}, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
-                            res.send(data);
-                        });
+                        var result_data = [];
+                        var array = req.query.ids.split(',');
+                        var i, j, temparray, chunk = 99;
+                        var requests = array.length / chunk;
+                        var done = 0;
+                        for (i = 0, j = array.length; i < j; i += chunk) {
+                            temparray = array.slice(i, i + chunk);
+                            twitter.users("lookup", {user_id: temparray.join(',')}, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
+                                result_data = result_data.concat(data);
+                                done++;
+                                if(done >= requests){
+                                    res.send(result_data);
+                                }
+                            });
+                        }
                     }
                 });
             }
