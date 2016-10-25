@@ -126,7 +126,6 @@ router.get('/users/:id/oauth', function (req, res) {
     }
 });
 
-
 router.get('/users/:id/friends/:friend_id/tweets', function (req, res) {
     var user = res.user;
     if (user.id != +req.params['id']) {
@@ -145,44 +144,17 @@ router.get('/users/:id/friends/:friend_id/tweets', function (req, res) {
                             exclude_replies: true
                         }, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
                             var result = [];
-                            data.forEach(function (tweet) {
-                                var tweet_date = new Date(tweet.created_at);
-                                var timeDiff = Math.abs(Date.now() - tweet_date.getTime());
-                                var diffHours = Math.ceil(timeDiff / (1000 * 3600));
-                                if (diffHours < 24) {
-                                    result.push(tweet);
-                                }
-                            });
+                            if(data !== undefined) {
+                                data.forEach(function (tweet) {
+                                    var tweet_date = new Date(tweet.created_at);
+                                    var timeDiff = Math.abs(Date.now() - tweet_date.getTime());
+                                    var diffHours = Math.ceil(timeDiff / (1000 * 3600));
+                                    if (diffHours < 24) {
+                                        result.push(tweet);
+                                    }
+                                });
+                            }
                             res.send(result);
-                        });
-                    }
-                });
-            }
-        });
-    }
-});
-
-router.get('/users/:id/friends/:friend_id/tweets/:tweet_id/embed', function (req, res) {
-    var user = res.user;
-    if (user.id != +req.params['id']) {
-        res.status(403).send();
-    } else {
-        connection.query("SELECT * FROM user WHERE id = ?", res.user.id, function (err, rows) {
-            if (err) {
-                throw err;
-            } else {
-                twitter.getRequestToken(function (error) {
-                    if (error) {
-                        throw error;
-                    } else {
-                        twitter.users("show", {user_id: req.params['friend_id']}, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
-                            var userName = data.screen_name;
-                            twitter.statuses("oembed", {
-                                url: 'https://publish.twitter.com/' + userName + '/status/' + req.params['tweet_id'],
-                                omit_script: true
-                            }, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
-                                res.send(data)
-                            });
                         });
                     }
                 });
@@ -214,7 +186,7 @@ router.get('/users/:id/friends/lookup', function (req, res) {
                             twitter.users("lookup", {user_id: temparray.join(',')}, rows[0].oauth, rows[0].oauth_secret, function (error, data) {
                                 result_data = result_data.concat(data);
                                 done++;
-                                if(done >= requests){
+                                if (done >= requests) {
                                     res.send(result_data);
                                 }
                             });
@@ -231,26 +203,23 @@ router.get('/users/:id/friends/lookup', function (req, res) {
  */
 router.get('/users/:id/saved', function (req, res) {
     var user = res.user;
-    if (user.id !== +req.param('id')) {
-        res.status(403).send();
-    } else {
-        connection.query("SELECT * FROM user JOIN saved_tweets ON user.id = saved_tweets.user_id WHERE user.id = ?", res.user.id, function (err, rows) {
-            if (err) {
-                throw err;
-            } else {
-                var data = [];
-                for (var row in rows) {
-                    data.append({id: row.id, tweeter_id: row.tweeter_id})
-                }
-                res.send(data);
+
+    connection.query("SELECT * FROM user JOIN saved_tweets ON user.id = saved_tweets.user_id WHERE user.id = ?", res.user.id, function (err, rows) {
+        if (err) {
+            throw err;
+        } else {
+            var data = [];
+            for (var row in rows) {
+                data.append({id: row.id, tweeter_id: row.tweeter_id})
             }
-        });
-    }
+            res.send(data);
+        }
+    });
 });
 
 router.post('/users/:id/saved', function (req, res) {
     var user = res.user;
-    if (user.id !== +req.param('id')) {
+    if (user.id !== +req.params['id']) {
         res.status(403).send();
     } else {
         connection.query("INSERT INTO saved_tweets SET ?", {
@@ -258,9 +227,29 @@ router.post('/users/:id/saved', function (req, res) {
             tweeter_id: req.body.tweeter_id
         }, function (err) {
             if (err) {
-                throw err;
+                res.status(400).send({error: err.message})
             } else {
                 res.status(201).send();
+            }
+        });
+    }
+});
+
+router.get('/users/:id/saved/:saved_id', function (req, res) {
+    var user = res.user;
+    if (user.id !== +req.params['id']) {
+        res.status(403).send();
+    } else {
+        connection.query("SELECT tweeter_id, user.oauth as oauth, user.oauth_secret as oauth_secret" +
+            "FROM user JOIN saved_tweets " +
+            "ON user.id = saved_tweets.user_id " +
+            "WHERE user.id = ? AND saved_tweets.id = ?", [res.user.id, req.params['saved_id']], function (err, rows) {
+            if (err) {
+                throw err;
+            } else {
+                twitter.statuses("show", {}, rows[0].oauth, rows[0].oauth_secret, function (err, data) {
+                    res.send(data);
+                });
             }
         });
     }
