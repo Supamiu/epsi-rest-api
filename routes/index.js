@@ -210,15 +210,15 @@ router.get('/users/:id/friends/lookup', function (req, res) {
  */
 router.get('/users/:id/saved', function (req, res) {
     var user = res.user;
-
     connection.query("SELECT * FROM user JOIN saved_tweets ON user.id = saved_tweets.user_id WHERE user.id = ?", res.user.id, function (err, rows) {
         if (err) {
             throw err;
         } else {
             var data = [];
-            rows.forEach(function(row) {
+            rows.forEach(function (row) {
                 data.push({id: row.id, tweeter_id: row.tweeter_id})
             });
+            console.log(data);
             res.send(data);
         }
     });
@@ -234,6 +234,7 @@ router.post('/users/:id/saved', function (req, res) {
             user_id: res.user.id,
             tweeter_id: req.body.tweeter_id
         }, function (err) {
+            console.log(req.body.tweeter_id);
             if (err) {
                 res.status(400).send({error: err.message})
             } else {
@@ -256,10 +257,25 @@ router.get('/users/:id/saved/:saved_id', function (req, res) {
             if (err) {
                 throw err;
             } else {
-                twitter.statuses("show", {}, rows[0].oauth, rows[0].oauth_secret, function (err, data) {
-                    console.log(data);
+                twitter.statuses("show", {id: rows[0].tweeter_id}, rows[0].oauth, rows[0].oauth_secret, function (err, data) {
                     res.send(data);
                 });
+            }
+        });
+    }
+});
+
+//Supprime un tweet des favoris.
+router.delete('/users/:id/saved/:tweet_id', function (req, res) {
+    var user = res.user;
+    if (user.id != +req.params['id']) {
+        res.status(403).send();
+    } else {
+        connection.query("DELETE FROM saved_tweets WHERE tweeter_id = ? and user_id = ?", [req.params['tweet_id'], res.user.id], function (err, rows) {
+            if (err) {
+                throw err;
+            } else {
+                res.status(204).send();
             }
         });
     }
