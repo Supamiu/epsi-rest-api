@@ -218,7 +218,6 @@ router.get('/users/:id/saved', function (req, res) {
             rows.forEach(function (row) {
                 data.push({id: row.id, tweeter_id: row.tweeter_id})
             });
-            console.log(data);
             res.send(data);
         }
     });
