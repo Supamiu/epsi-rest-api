@@ -34,7 +34,7 @@ app.use('/', login);
 
 //Authentification
 app.use(function (req, res, next) {
-    var key = req.query.key;
+    var key = req.headers['x-custom-auth'];
     if (key === undefined) {
         res.status(401).send("Authentication key needed");
     } else {

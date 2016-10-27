@@ -233,7 +233,6 @@ router.post('/users/:id/saved', function (req, res) {
             user_id: res.user.id,
             tweeter_id: req.body.tweeter_id
         }, function (err) {
-            console.log(req.body.tweeter_id);
             if (err) {
                 res.status(400).send({error: err.message})
             } else {
