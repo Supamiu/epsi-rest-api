@@ -12,7 +12,7 @@ var connection = mysql.createConnection({
 
 connection.connect();
 /*
- LOGIN
+ Login simple avec la BDD.
  */
 router.get('/login', function (req, res) {
     var login = req.query.login;
@@ -27,7 +27,7 @@ router.get('/login', function (req, res) {
 });
 
 /*
-
+ Création d'un utilisateur via méthode POST.
  */
 router.post('/users', function (req, res) {
     if (!req.body.login || !req.body.password) {

@@ -18,6 +18,7 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+// On ajoute un filtre pour permettre le CORS
 app.use(cors());
 
 // uncomment after placing your favicon in /public
@@ -44,6 +45,7 @@ app.use(function (req, res, next) {
     }
 });
 
+//Routes standards
 app.use('/', routes);
 
 // catch 404 and forward to error handler

@@ -1,10 +1,10 @@
 CREATE DATABASE  IF NOT EXISTS `tweeter_api` /*!40100 DEFAULT CHARACTER SET utf8 */;
 USE `tweeter_api`;
--- MySQL dump 10.13  Distrib 5.7.12, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.12, for Win32 (AMD64)
 --
 -- Host: localhost    Database: tweeter_api
 -- ------------------------------------------------------
--- Server version	5.7.16-log
+-- Server version	5.5.52
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -56,11 +56,12 @@ DROP TABLE IF EXISTS `saved_tweets`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `saved_tweets` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `tweeter_id` varchar(45) DEFAULT NULL,
+  `tweeter_id` bigint(20) DEFAULT NULL,
   `user_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `tweeter_id_UNIQUE` (`tweeter_id`),
   KEY `user_id_idx` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -69,6 +70,7 @@ CREATE TABLE `saved_tweets` (
 
 LOCK TABLES `saved_tweets` WRITE;
 /*!40000 ALTER TABLE `saved_tweets` DISABLE KEYS */;
+INSERT INTO `saved_tweets` VALUES (1,791385046208901100,2);
 /*!40000 ALTER TABLE `saved_tweets` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -109,4 +111,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-10-24  1:33:46
+-- Dump completed on 2016-10-27  9:25:34
